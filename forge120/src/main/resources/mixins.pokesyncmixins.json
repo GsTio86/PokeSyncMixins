@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "me.gt86.pokesyncmixins.mixins",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MixinEntityPlayerExtension",
+    "MixinPixelmonPlayerTracker"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "refmap": "mixins.${mod_id}.refmap.json"
+}

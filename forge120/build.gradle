@@ -1,0 +1,89 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: '1.20.2'
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+version = "${rootProject.mod_version}"
+group = "me.gt86.${rootProject.mod_id}"
+archivesBaseName = "${rootProject.mod_name}"
+
+repositories {
+    mavenCentral()
+    ivy {
+        setUrl('https://download.nodecdn.net/containers/reforged/server/release')
+        metadataSources {
+            artifact()
+        }
+        patternLayout {
+            artifact('[revision]/[artifact].[ext]')
+        }
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:1.20.2-48.1.0"
+
+    implementation fg.deobf('pixelmon:Pixelmon-1.20.2-9.2.6-server:9.2.6')
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+Map<String, Object> attributes = new HashMap<>()
+attributes.put("Specification-Title", "${rootProject.mod_id}")
+attributes.put("Specification-Vendor", "GT86")
+attributes.put("Specification-Version", "1")
+attributes.put("Implementation-Title", "${rootProject.mod_name}")
+attributes.put("Implementation-Version", "${rootProject.mod_version}")
+attributes.put("Implementation-Vendor","GT86")
+attributes.put("Implementation-Timestamp", new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"))
+attributes.put("TweakClass", "org.spongepowered.asm.launch.MixinTweaker")
+attributes.put("TweakOrder", 0)
+attributes.put("MixinConfigs", "mixins.${rootProject.mod_id}.json")
+
+jar.manifest.attributes(attributes)
+
+mixin {
+    add sourceSets.main, "mixins.${rootProject.mod_id}.refmap.json"
+    config "mixins.${rootProject.mod_id}.json"
+}
+
+jar.finalizedBy('reobfJar')
+
+Map<String, Object> properties = new HashMap<>()
+properties.put('version', rootProject.mod_version)
+properties.put('mod_id', rootProject.mod_id)
+properties.put('mod_name', rootProject.mod_name)
+properties.put('mod_description', rootProject.mod_description)
+
+processResources {
+    inputs.properties(properties)
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from(sourceSets.main.resources.srcDirs) {
+        include 'META-INF/mods.toml', "pack.mcmeta", "mixins.${rootProject.mod_id}.json"
+        expand(properties)
+    }
+}
+
+tasks.getByName('build').finalizedBy('copyToBuilds')
+
+task copyToBuilds {
+    doLast {
+        copy {
+            from "/build/libs/${rootProject.mod_name}-${rootProject.mod_version}.jar"
+            rename("${rootProject.mod_name}-${rootProject.mod_version}.jar", "${rootProject.mod_name}-${rootProject.mod_version}-1.20.2.jar")
+            into "${rootDir}/builds"
+        }
+    }.finalizedBy(clean)
+}
+
+tasks.withType(JavaCompile) { task ->
+    task.options.encoding = 'UTF-8'
+    task.options.fork = true
+}
